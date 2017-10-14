@@ -8,7 +8,7 @@ const http = require('http');
 
 //establish date and time
 let nowTime = new Date();
-let nowDate = (nowTime.toString().slice(4,15));
+let nowDate = (nowTime.toString().slice(4,15)).replace(/\s/g, '-');
 
 let links = [];
 let dataSet = [];
@@ -38,7 +38,7 @@ function scrape() {
       const products = ($('.products li a'));
 
       for (var i = 0; i <= products.length - 1; i++) {
-        let site = 'http://shirts4ike.com/' + (cheerio(products[i]).attr('href'));
+        let site = 'http://shirts4mike.com/' + (cheerio(products[i]).attr('href'));
         request(site, function(error, response, linkBody){
 
           if (error || response.statusCode !== 200) {
