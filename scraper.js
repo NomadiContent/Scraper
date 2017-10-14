@@ -1,6 +1,7 @@
 const fs = require('fs');
 //content scraping library
-const osmosis = require('osmosis');
+const cheerio = require('cheerio');
+const request = require('request')
 //json to csv conversion library
 const json2csv = require('json2csv');
 const http = require('http');
@@ -8,50 +9,18 @@ const http = require('http');
 //establish date and time
 let nowTime = new Date();
 let nowDate = (nowTime.toString().slice(4,15));
-let savedData = [];
+
+let links = [];
+let dataSet = [];
+const fields = ['title', 'price', 'image','url','time'];
 
 //function to print error messages
 function printError(error){
   console.error(error.message);
 }
 
-//scrape data from endpoints using 'osmosis' package
-function scrape() {
-  try {
-    osmosis
-        .get('http://www.shirts4mike.com/shirts.php')
-        .find('.products li a')
-        .set({
-          'url': '@href',
-        })
-        .follow('@href')
-        .set({
-          'title': 'title',
-          'price': '.price',
-          'imgurl': 'img @src'
-        })
-        .data(function(data) {
-            savedData.push(data);
-        })
-        .done(function() {
-            //when all actions are completed add 'time' to savedData object
-            for (i in savedData) {
-              savedData[i]['time'] = nowTime.toString();
-            }
-            //format savedData as a JSON object and reorder headers/data
-            JSON.stringify(savedData, ['title','price','imgurl','url','time'], 4);
-            json2csv({data: savedData, fields: ['title', 'price', 'imgurl','url','time']}, function(err, csv) {
-              //write savedData object to a file
-              fs.writeFile(`data/${nowDate}.csv`, csv, function(err) {
-                if (err) throw err;
-              console.log('file saved');
-            });
-          });
-        });
-      } catch (error) {
-        printError(error);
-      }
-}
+
+
 //create data folder if it doesn't alread exist
 try {
   if (fs.existsSync('data') == false)   {
@@ -62,25 +31,47 @@ try {
 }
 
 //make a get request to ensure that the endpoint used in the scraper is available
-function getData() {
-  try {
-  const request = http.get('http://www.shirts4mike.com/shirts.php',response => {
-    //proceed only if status of website is 'ok'
-    if (response.statusCode === 200) {
-      //call scraper
-      scrape();
-    } else {
-      //log error message from endpoint if status code is not 'ok'
-      const message = `There was an error: ${http.STATUS_CODES[response.statusCode]}`
-      const statusCodeError = new Error(message);
-      fs.appendFileSync('data/scraper-error.log', `${nowTime} ${statusCodeError} \r\n`);
-      printError(statusCodeError);
-    }
+
+function scrape() {
+  request('http://www.shirts4mike.com/shirts.php', function (error, response, body) {
+
+     if (error || response.statusCode !== 200) {
+          const errorMessage = "failed to connect to shirts4mike"
+          fs.appendFileSync('data/scraper-error.log', `${nowTime} ${errorMessage} \r\n`);
+          return 'error';
+      }
+
+      let $ = cheerio.load(body);
+      const products = ($('.products li a'));
+
+      for (var i = 0; i <= products.length - 1; i++) {
+        let site = 'http://shirts4ike.com/' + (cheerio(products[i]).attr('href'));
+        request(site, function(error, response, linkBody){
+
+          if (error || response.statusCode !== 200) {
+               const errorMessage = "failed to connect to shirts4mike, individual shirts page"
+               fs.appendFileSync('data/scraper-error.log', `${nowTime} ${errorMessage} \r\n`);
+               return 'error';
+           }
+
+          $ = cheerio.load(linkBody)
+          let title = $('title').text();
+          let image = $('.shirt-picture img').attr('src');
+          let price = $('.price').text();
+          let url = response.request.uri.href;
+          let time = nowTime.toString();
+          dataSet.push({title, price, image, url, time});
+
+          if (dataSet.length === products.length) {
+            var csv = json2csv({ data: dataSet, fields: fields });
+            fs.writeFile(`data/${nowDate}.csv`, csv, function(err) {
+              if (err) throw err;
+              console.log('file saved');
+            });
+          }
+        });
+      }
   });
-    request.on('error', printError)
-  } catch (error) {
-    printError(error);
-  }
 }
-//call function
-getData();
+
+scrape();
