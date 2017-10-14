@@ -14,12 +14,6 @@ let links = [];
 let dataSet = [];
 const fields = ['title', 'price', 'image','url','time'];
 
-//function to print error messages
-function printError(error){
-  console.error(error.message);
-}
-
-
 
 //create data folder if it doesn't alread exist
 try {
@@ -30,13 +24,12 @@ try {
   console.lgo('there was an error');
 }
 
-//make a get request to ensure that the endpoint used in the scraper is available
 
 function scrape() {
   request('http://www.shirts4mike.com/shirts.php', function (error, response, body) {
 
      if (error || response.statusCode !== 200) {
-          const errorMessage = "failed to connect to shirts4mike"
+          const errorMessage = error.message + "failed to connect to shirts4mike"
           fs.appendFileSync('data/scraper-error.log', `${nowTime} ${errorMessage} \r\n`);
           return 'error';
       }
@@ -49,7 +42,7 @@ function scrape() {
         request(site, function(error, response, linkBody){
 
           if (error || response.statusCode !== 200) {
-               const errorMessage = "failed to connect to shirts4mike, individual shirts page"
+               const errorMessage = error.message + " failed to connect to shirts4mike, individual shirts page"
                fs.appendFileSync('data/scraper-error.log', `${nowTime} ${errorMessage} \r\n`);
                return 'error';
            }
