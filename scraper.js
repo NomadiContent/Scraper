@@ -36,6 +36,7 @@ function scrape() {
      if (error || response.statusCode !== 200) {
           const errorMessage = error.message + "failed to connect to shirts4mike"
           fs.appendFileSync('data/scraper-error.log', `${nowTime} ${errorMessage} \r\n`);
+          console.log(errorMessage);
           return 'error';
       }
 
@@ -50,6 +51,7 @@ function scrape() {
           if (error || response.statusCode !== 200) {
                const errorMessage = error.message + " failed to connect to shirts4mike, individual shirts page"
                fs.appendFileSync('data/scraper-error.log', `${nowTime} ${errorMessage} \r\n`);
+               console.log(errorMessage);
                return 'error';
            }
 
