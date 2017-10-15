@@ -10,7 +10,7 @@ const http = require('http');
 
 //establish date and time and arrays for holding shit info
 let nowTime = new Date();
-let nowDate = (nowTime.toString().slice(4,15)).replace(/\s/g, '-');
+let nowDate = new Date().toISOString().substr(0,10);
 let links = [];
 let dataSet = [];
 
