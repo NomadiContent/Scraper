@@ -1,18 +1,20 @@
 const fs = require('fs');
-//content scraping library
+//using cheerio to traverse dom
 const cheerio = require('cheerio');
+
+//using request to simplify getting the HTML document body
 const request = require('request')
 //json to csv conversion library
 const json2csv = require('json2csv');
 const http = require('http');
 
-//establish date and time
+//establish date and time and arrays for holding shit info
 let nowTime = new Date();
 let nowDate = (nowTime.toString().slice(4,15)).replace(/\s/g, '-');
-
 let links = [];
 let dataSet = [];
-const fields = ['title', 'price', 'image','url','time'];
+
+const fields = ['title', 'price', 'imageURL','url','time'];
 
 
 //create data folder if it doesn't alread exist
@@ -21,11 +23,14 @@ try {
     fs.mkdirSync('data');
   }
 } catch (err) {
-  console.lgo('there was an error');
+  console.log('there was an error');
 }
 
 
+//function to scrape data
 function scrape() {
+
+  //find product links
   request('http://www.shirts4mike.com/shirts.php', function (error, response, body) {
 
      if (error || response.statusCode !== 200) {
@@ -37,6 +42,7 @@ function scrape() {
       let $ = cheerio.load(body);
       const products = ($('.products li a'));
 
+      //pull details of products
       for (var i = 0; i <= products.length - 1; i++) {
         let site = 'http://shirts4mike.com/' + (cheerio(products[i]).attr('href'));
         request(site, function(error, response, linkBody){
@@ -55,6 +61,7 @@ function scrape() {
           let time = nowTime.toString();
           dataSet.push({title, price, image, url, time});
 
+          //write products to datafile
           if (dataSet.length === products.length) {
             var csv = json2csv({ data: dataSet, fields: fields });
             fs.writeFile(`data/${nowDate}.csv`, csv, function(err) {
@@ -67,4 +74,5 @@ function scrape() {
   });
 }
 
+//execute scraping function
 scrape();
