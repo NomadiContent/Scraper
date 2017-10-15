@@ -55,11 +55,11 @@ function scrape() {
 
           $ = cheerio.load(linkBody)
           let title = $('title').text();
-          let image = $('.shirt-picture img').attr('src');
+          let imageURL = $('.shirt-picture img').attr('src');
           let price = $('.price').text();
           let url = response.request.uri.href;
           let time = nowTime.toString();
-          dataSet.push({title, price, image, url, time});
+          dataSet.push({title, price, imageURL, url, time});
 
           //write products to datafile
           if (dataSet.length === products.length) {
